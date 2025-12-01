@@ -1,55 +1,32 @@
-Abington_Map = {
-    'Woodland Building': [('A', 214), ('K', 51), ('L', 58), ('AF', 286), ('J', 270), ('AO', 200)],
-    'Lares Building': [('H', 143), ('G', 119), ('O', 111), ('Q', 130)],
-    'Sutherland Building': [('U', 97), ('S', 97), ('R', 192), ('Lion Shrine', 197), ('Sutherland Auditorium', 204)],
-    'Sutherland Auditorium': [('V', 112), ('Sutherland Building', 204)],
-    'Athletic Building': [('AH', 121), ('AK', 174), ('AJ', 246)],
-    'Rydal Building': [('AD', 96), ('AG', 183), ('AF', 216)],
-    'Springhouse': [('J', 129), ('I', 71)],
-    'Lion Shrine': [('P', 83), ('S', 76), ('Sutherland Building', 197)],
-    'Tennis Court': [('AH', 134), ('AL', 96)],
-    'Cloverly Building': [('AJ', 81)],
-    'A': [('Woodland Building', 214), ('J', 121) , ('L', 158), ('B', 116)],
-    'B': [('A', 116), ('C', 57), ('D', 59)],
-    'C': [('B', 57), ('D', 43), ('F', 130)],
-    'D': [('B', 59), ('C', 43), ('M', 181), ('E', 49)],
-    'E': [('D', 49), ('F', 128), ('N', 124)],
-    'F': [('G', 63), ('C', 132), ('O', 114), ('E', 128)],
-    'G': [('F', 63), ('I', 180), ('Lares Building', 119)],
-    'H': [('Lares Building', 143), ('I', 153)],
-    'I': [('H', 153), ('Springhouse', 71), ('J', 181), ('G', 180)],
-    'J': [('Springhouse', 129), ('I', 181), ('Woodland Building', 270), ('A', 121), ('AO', 90)],
-    'K': [('Woodland Building', 51), ('L', 114), ('AF', 265), ('AO', 277)],
-    'L': [('K', 114), ('Woodland Building', 58), ('A', 158)],
-    'M': [('D', 181), ('AE', 243)],
-    'N': [('E', 124), ('T', 174), ('O', 144), ('Y', 329)],
-    'O': [('Lares Building', 111), ('P', 107), ('F', 114), ('N', 144)],
-    'P': [('Q', 56), ('O', 107), ('Lion Shrine', 83), ('S', 114)],
-    'Q': [('Lares Building', 130), ('P', 56)],
-    'R': [('Sutherland Building', 192)],
-    'S': [('Sutherland Building', 97), ('T', 80), ('U', 80), ('Lion Shrine', 76), ('P', 114)],
-    'T': [('U', 80), ('N', 174), ('S', 80)],
-    'U': [('Sutherland Building', 97), ('T', 80), ('V', 109), ('S', 80)],
-    'V': [('U', 109), ('W', 164), ('Sutherland Auditorium', 112)],
-    'W': [('V', 164), ('X', 51)],
-    'X': [('Y', 34), ('W', 51), ('AN', 48), ('AM', 260)],
-    'Y': [('N', 329), ('Z', 192), ('X', 34)],
-    'Z': [('AA', 197), ('Y', 192)],
-    'AA': [('AB', 240), ('Z', 197)],
-    'AB': [('AA', 240), ('AC', 33), ('AH', 239)],
-    'AC': [('AG', 186), ('AB', 33), ('AE', 216)],
-    'AD': [('Rydal Building', 96), ('AG', 273), ('AF', 116)],
-    'AE': [('AC', 216), ('AF', 50), ('M', 243)],
-    'AF': [('Rydal Building', 216), ('Woodland Building', 286), ('AE', 50), ('AD', 116), ('K', 265)],
-    'AG': [('AC', 186), ('Rydal Building', 183), ('AD', 273), ('AJ', 274)],
-    'AH': [('Tennis Court', 134), ('Athletic Building', 121), ('AI', 105), ('AB', 239)],
-    'AI': [('AK', 57), ('AH', 105), ('AL', 84)],
-    'AJ': [('Cloverly Building', 81), ('Athletic Building', 246), ('AG', 274)],
-    'AK': [('Athletic Building', 174), ('AI', 57), ('AL', 67)],
-    'AL': [('AM', 153 ), ('Tennis Court', 96), ('AI', 84), ('AK', 67)],
-    'AM': [('AL', 153), ('X', 260)],
-    'AN': [('X', 48)],
-    'AO': [('J', 90), ('K', 277), ('Woodland Building', 200)]
-}
+import heapq
+from graph import Abington_Map
 
-#def dijkstra(graph, start):
+def shortest_path(graph, start, end):
+    p_queue = [(0, start, [])]
+    visited = set()
+
+    while p_queue:
+        dist, node, path = heapq.heappop(p_queue)
+
+        if node in visited:
+            continue
+
+        visited.add(node)
+        path = path + [node]
+
+        if node == end:
+            return dist, path
+        
+        for neighbor, weight in graph[node]:
+            if neighbor not in visited:
+                heapq.heappush(p_queue, (dist + weight, neighbor, path))
+ 
+    return float('inf'), []
+
+
+if __name__ == "__main__":
+    distance, route = shortest_path(Abington_Map, "Woodland Building", "AN")
+    print("Shortest Distance:", distance)
+    print("Route: ", " → ".join(route))
+
+
