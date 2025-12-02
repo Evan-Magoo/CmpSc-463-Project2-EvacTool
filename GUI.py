@@ -11,22 +11,72 @@ logo = tk.PhotoImage(file="favicon.png")
 window.iconphoto(False, logo)
 
 node_ids={}
-current_location = None
-path_items = []
+node_labels={}
+current_location=None
+path_items=[]
 
-blocked_edges = []      # list of tuples like ("A", "B")
-blocked_items = []      # canvas line IDs for blocked edges
-block_selection = []    # stores the two clicked nodes to block
+blocked_edges=[]      # list of tuples like ("A", "B")
+blocked_items=[]      # canvas line IDs for blocked edges
+block_selection=[]    # stores the two clicked nodes to block
 
 graph_copy = copy.deepcopy(Abington_Map)
 
+def set_node_color(node, color):
+    if node in node_ids:
+        canvas.itemconfig(node_ids[node], fill=color)
+        try:
+            canvas.tag_raise(node_ids[node])   # bring oval above path lines if needed
+        except Exception:
+            pass
+
+def reset_node_colors():
+    for n in node_ids.keys():
+        # default to lightblue
+        canvas.itemconfig(node_ids[n], fill='lightblue')
+
+    # preserve isolated nodes
+    for node in Abington_Map:
+        originally_had = len(Abington_Map[node]) > 0
+        now_has = len(graph_copy[node]) > 0
+        if originally_had and not now_has:
+            set_node_color(node, 'yellow')
+
+    # preserve selection
+    if current_location and current_location in node_ids:
+        set_node_color(current_location, 'green')
+
+    for node, (x, y) in Abington_Locations.items():
+        if node in node_labels and node_labels[node]:
+            for tid in node_labels[node]:
+                try:
+                    canvas.delete(tid)
+                except Exception:
+                    pass
+        if len(node) > 3:
+            node_labels[node] = [
+                canvas.create_text(x+4, y-9,  text=node, fill="black", font=("arial", 9, 'bold')),
+                canvas.create_text(x+4, y-11, text=node, fill="black", font=("arial", 9, 'bold')),
+                canvas.create_text(x+6, y-9,  text=node, fill="black", font=("arial", 9, 'bold')),
+                canvas.create_text(x+6, y-11, text=node, fill="black", font=("arial", 9, 'bold')),
+                canvas.create_text(x+5, y-10, text=node, fill="white", font=("arial", 9, 'bold')),
+            ]
+
+def clear_path_visuals():
+    """Remove old path lines (not node ovals) and reset node colors to base state."""
+    global path_items
+    for item in path_items:
+        for i in item:
+            try: 
+                canvas.delete(i)
+            except Exception:
+                pass
+    path_items = []
+    reset_node_colors()
 
 def get_path():
     global path_items
     
-    for item in path_items:
-        canvas.delete(item)
-    path_items = []
+    clear_path_visuals()
 
     route = shortest_path(graph_copy, current_location, "Woodland Building")
     path = route[1]
@@ -35,65 +85,116 @@ def get_path():
     for u, v in edges:
         x1, y1 = Abington_Locations[u]
         x2, y2 = Abington_Locations[v]
-        line_id = canvas.create_line(x1, y1, x2, y2, fill='red', width=2)
-        path_items.append(line_id)
+        line_ids = [
+            canvas.create_line(x1, y1, x2, y2, fill='black', width=4, arrow=tk.LAST, arrowshape=(11, 15, 6)),
+            canvas.create_line(x1, y1, x2, y2, fill='black', width=4, arrow=tk.LAST, arrowshape=(9, 13, 4)),
+            canvas.create_line(x1, y1, x2, y2, fill='black', width=4, arrow=tk.LAST, arrowshape=(10, 16, 6)),
+            canvas.create_line(x1, y1, x2, y2, fill='red', width=2, arrow=tk.LAST, arrowshape=(10, 14, 5)),
+        ]
+        path_items.append(line_ids)
 
     for node in path:
-        x, y = Abington_Locations[node]
-        r=4
-        oval_id = canvas.create_oval(x-r, y-r, x+r, y+r, fill="red")
-        path_items.append(oval_id)
+        if node in node_ids:
+            set_node_color(node, 'red')
+
         if len(node) > 3:
-            canvas.create_text(x+4, y-9, text=node, fill="black", font=("arial", 9, 'bold'))
-            canvas.create_text(x+4, y-11, text=node, fill="black", font=("arial", 9, 'bold'))
-            canvas.create_text(x+6, y-9, text=node, fill="black", font=("arial", 9, 'bold'))
-            canvas.create_text(x+6, y-11, text=node, fill="black", font=("arial", 9, 'bold'))
-            canvas.create_text(x+5, y-10, text=node, fill="red", font=("arial", 9, 'bold'))
+            if node in node_labels and node_labels[node]:
+                for tid in node_labels[node]:
+                    try:
+                        canvas.delete(tid)
+                    except Exception:
+                        pass
+            x, y = Abington_Locations[node]
+            node_labels[node] = [
+                canvas.create_text(x+4, y-10, text=node, fill="black", font=("arial", 9, 'bold')),
+                canvas.create_text(x+4, y-12, text=node, fill="black", font=("arial", 9, 'bold')),
+                canvas.create_text(x+6, y-10, text=node, fill="black", font=("arial", 9, 'bold')),
+                canvas.create_text(x+6, y-12, text=node, fill="black", font=("arial", 9, 'bold')),
+                canvas.create_text(x+5, y-11, text=node, fill="red", font=("arial", 9, 'bold')),
+            ]
 
     print(edges)
 
 def get_closest_path():
     global path_items
     
-    for item in path_items:
-        canvas.delete(item)
-    path_items = []
+    clear_path_visuals()
 
     route = closest_building_path(graph_copy, current_location)
+    if not route or route[1] is None:
+        print("No route found")
+        return
+    
     path = route[1]
     edges = list(zip(path[:-1], path[1:]))
 
     for u, v in edges:
         x1, y1 = Abington_Locations[u]
         x2, y2 = Abington_Locations[v]
-        line_id = canvas.create_line(x1, y1, x2, y2, fill='red', width=2)
-        path_items.append(line_id)
+        line_ids = [
+            canvas.create_line(x1, y1, x2, y2, fill='black', width=4, arrow=tk.LAST, arrowshape=(10, 12, 5)),
+            canvas.create_line(x1, y1, x2, y2, fill='red', width=2, arrow=tk.LAST, arrowshape=(10, 12, 5)),
+        ]
+        path_items.append(line_ids)
 
     for node in path:
-        x, y = Abington_Locations[node]
-        r=4
-        oval_id = canvas.create_oval(x-r, y-r, x+r, y+r, fill="red")
-        path_items.append(oval_id)
+        if node in node_ids:
+            set_node_color(node, 'red')
+    
         if len(node) > 3:
-            canvas.create_text(x+4, y-9, text=node, fill="black", font=("arial", 9, 'bold'))
-            canvas.create_text(x+4, y-11, text=node, fill="black", font=("arial", 9, 'bold'))
-            canvas.create_text(x+6, y-9, text=node, fill="black", font=("arial", 9, 'bold'))
-            canvas.create_text(x+6, y-11, text=node, fill="black", font=("arial", 9, 'bold'))
-            canvas.create_text(x+5, y-10, text=node, fill="red", font=("arial", 9, 'bold'))
+            if node in node_labels and node_labels[node]:
+                for tid in node_labels[node]:
+                    try:
+                        canvas.delete(tid)
+                    except Exception:
+                        pass
+            x, y = Abington_Locations[node]
+            node_labels[node] = [
+                canvas.create_text(x+4, y-10, text=node, fill="black", font=("arial", 9, 'bold')),
+                canvas.create_text(x+4, y-12, text=node, fill="black", font=("arial", 9, 'bold')),
+                canvas.create_text(x+6, y-10, text=node, fill="black", font=("arial", 9, 'bold')),
+                canvas.create_text(x+6, y-12, text=node, fill="black", font=("arial", 9, 'bold')),
+                canvas.create_text(x+5, y-11, text=node, fill="red", font=("arial", 9, 'bold')),
+            ]
 
     print(edges)
+
+
+def update_isolated_nodes():
+    for node in Abington_Map:
+        originally_had = len(Abington_Map[node]) > 0
+        now_has = len(graph_copy[node]) > 0
+
+        print(originally_had, "=?=", now_has)
+
+        if originally_had and not now_has:
+            set_node_color(node, 'yellow')
 
 
 def on_click(event):
     global current_location
     click_x, click_y = event.x, event.y
+
     for name, (x, y) in Abington_Locations.items():
         if (click_x - x)**2 + (click_y - y)**2 <= 20:
             current_location = name
             print(f"Clicked on node: {name}")
+
             for n, oval_id in node_ids.items():
-                canvas.itemconfig(oval_id, fill="lightblue")
-            canvas.itemconfig(node_ids[name], fill='green')
+                current_color = canvas.itemcget(oval_id, "fill")
+
+                originally_had = len(Abington_Map[n]) > 0
+                now_has = len(graph_copy[n]) > 0
+
+                if originally_had and not now_has:
+                    continue
+
+                if current_color == "yellow":
+                    continue
+
+
+            if name in node_ids:
+                canvas.itemconfig(node_ids[name], fill='green')
             break
 
 
@@ -117,7 +218,15 @@ def on_click_block(event):
         close_path(u, v)
 
         for n in block_selection:
-            canvas.itemconfig(node_ids[n], fill="lightblue")
+            originally_had = len(Abington_Map[n]) > 0
+            now_has = len(graph_copy[n]) > 0
+
+            # If still isolated → keep yellow
+            if originally_had and not now_has:
+                continue
+            
+            if n in node_ids:
+                canvas.itemconfig(node_ids[n], fill="lightblue")
         block_selection.clear()
 
 
@@ -141,16 +250,14 @@ def close_path(u, v):
 
     x1, y1 = Abington_Locations[u]
     x2, y2 = Abington_Locations[v]
-    line_id = canvas.create_line(x1, y1, x2, y2, fill='yellow', width=3)
-    for node, (x, y) in Abington_Locations.items():
-        r = 4
-        oval_id = canvas.create_oval(x-r, y-r, x+r, y+r, fill="lightblue", activefill='blue')
-        node_ids[node] = oval_id
-    blocked_items.append(line_id)
+    line_ids = [
+        canvas.create_line(x1, y1, x2, y2, fill='black', width=3),
+        canvas.create_line(x1, y1, x2, y2, fill='yellow', width=2),
+    ]
+    blocked_items.append(line_ids)
 
-    for item in path_items:
-        canvas.delete(item)
-    path_items = []
+    clear_path_visuals()
+    update_isolated_nodes()
 
     if current_location is None:
         print("No current location selected.")
@@ -171,13 +278,10 @@ def close_path(u, v):
         path_items.append(line_id)
 
     for node in new_path:
-        x, y = Abington_Locations[node]
-        r = 4
-        oval_id = canvas.create_oval(x-r, y-r, x+r, y+r, fill="red")
-        path_items.append(oval_id)
+        if node in node_ids:
+            set_node_color(node, 'red')
 
-    print(f"Rerouted path: {edges}")
-
+    update_isolated_nodes()
 
 if __name__ == "__main__":
     global canvas_img_ref
@@ -194,16 +298,21 @@ if __name__ == "__main__":
     canvas.create_image(0, 0, anchor='nw', image=tk_img)
     canvas_img_ref = tk_img
 
+    node_labels = {}
+
     for node, (x, y) in Abington_Locations.items():
         r = 4
         oval_id = canvas.create_oval(x-r, y-r, x+r, y+r, fill="lightblue", activefill='blue')
         node_ids[node] = oval_id
         if len(node) > 3:
-            canvas.create_text(x+4, y-9, text=node, fill="black", font=("arial", 9, 'bold'))
-            canvas.create_text(x+4, y-11, text=node, fill="black", font=("arial", 9, 'bold'))
-            canvas.create_text(x+6, y-9, text=node, fill="black", font=("arial", 9, 'bold'))
-            canvas.create_text(x+6, y-11, text=node, fill="black", font=("arial", 9, 'bold'))
-            canvas.create_text(x+5, y-10, text=node, fill="white", font=("arial", 9, 'bold'))
+            label_ids = [
+                canvas.create_text(x+4, y-10, text=node, fill="black", font=("arial", 9, 'bold')),
+                canvas.create_text(x+4, y-12, text=node, fill="black", font=("arial", 9, 'bold')),
+                canvas.create_text(x+6, y-10, text=node, fill="black", font=("arial", 9, 'bold')),
+                canvas.create_text(x+6, y-12, text=node, fill="black", font=("arial", 9, 'bold')),
+                canvas.create_text(x+5, y-11, text=node, fill="white", font=("arial", 9, 'bold')),
+            ]
+            node_labels[node] = label_ids
 
     button = tk.Button(window, text="Run Test", command=lambda: get_path())
     button.pack()
@@ -219,3 +328,5 @@ if __name__ == "__main__":
     button = tk.Button(window, text="Test Location", command=lambda: print(current_location))
     button.pack()
     window.mainloop()
+
+    button = tk.Button(window)

@@ -10,7 +10,7 @@ Buildings = [
 ]
 
 Abington_Map = {
-    'Woodland Building': [('A', 71), ('K', 51), ('L', 58), ('AF', 286), ('AO', 154)],
+    'Woodland Building': [('A', 71), ('K', 51), ('L', 58), ('AF', 128), ('AO', 154)],
     'Lares Building': [('H', 143), ('G', 119), ('O', 111), ('Q', 130)],
     'Sutherland Building': [('U', 97), ('S', 97), ('R', 192), ('Lion Shrine', 197), ('Sutherland Auditorium', 204)],
     'Sutherland Auditorium': [('V', 112), ('Sutherland Building', 204)],
@@ -25,7 +25,7 @@ Abington_Map = {
     'C': [('B', 57), ('D', 43), ('F', 130)],
     'D': [('B', 59), ('C', 43), ('M', 181), ('E', 49)],
     'E': [('D', 49), ('F', 128), ('N', 124)],
-    'F': [('G', 63), ('C', 132), ('O', 114), ('E', 128)],
+    'F': [('G', 63), ('C', 130), ('O', 114), ('E', 128)],
     'G': [('F', 63), ('I', 180), ('Lares Building', 119)],
     'H': [('Lares Building', 143), ('I', 153)],
     'I': [('H', 153), ('Springhouse', 71), ('J', 181), ('G', 180)],
@@ -51,7 +51,7 @@ Abington_Map = {
     'AC': [('AG', 186), ('AB', 33), ('AE', 216)],
     'AD': [('Rydal Building', 96), ('AG', 273), ('AF', 116)],
     'AE': [('AC', 216), ('AF', 50), ('M', 243)],
-    'AF': [('Rydal Building', 216), ('Woodland Building', 286), ('AE', 50), ('AD', 116), ('K', 265)],
+    'AF': [('Rydal Building', 216), ('Woodland Building', 128), ('AE', 50), ('AD', 116), ('K', 265)],
     'AG': [('AC', 186), ('Rydal Building', 183), ('AD', 273), ('AJ', 274)],
     'AH': [('Tennis Court', 134), ('Athletic Building', 121), ('AI', 105), ('AB', 239)],
     'AI': [('AK', 57), ('AH', 105), ('AL', 84)],
