@@ -6,8 +6,6 @@ Buildings = [
     'Athletic Building',
     'Rydal Building',
     'Springhouse',
-    'Lion Shrine',
-    'Tennis Court',
     'Cloverly Building'
 ]
 

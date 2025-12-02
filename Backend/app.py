@@ -23,6 +23,15 @@ def shortest_path(graph, start, end):
  
     return float('inf'), []
 
+def closest_building_path(graph, start):
+    results = []
+    for building in Buildings:
+        result = shortest_path(graph, start, building)
+        results.append(result)
+    results.sort()
+    print(results[0])
+    return results[0]
+
 if __name__ == "__main__":
     distance, route = shortest_path(Abington_Map, "Woodland Building", "AN")
     print("Shortest Distance:", distance)

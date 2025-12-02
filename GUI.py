@@ -20,6 +20,7 @@ block_selection = []    # stores the two clicked nodes to block
 
 graph_copy = copy.deepcopy(Abington_Map)
 
+
 def get_path():
     global path_items
     
@@ -51,6 +52,38 @@ def get_path():
 
     print(edges)
 
+def get_closest_path():
+    global path_items
+    
+    for item in path_items:
+        canvas.delete(item)
+    path_items = []
+
+    route = closest_building_path(graph_copy, current_location)
+    path = route[1]
+    edges = list(zip(path[:-1], path[1:]))
+
+    for u, v in edges:
+        x1, y1 = Abington_Locations[u]
+        x2, y2 = Abington_Locations[v]
+        line_id = canvas.create_line(x1, y1, x2, y2, fill='red', width=2)
+        path_items.append(line_id)
+
+    for node in path:
+        x, y = Abington_Locations[node]
+        r=4
+        oval_id = canvas.create_oval(x-r, y-r, x+r, y+r, fill="red")
+        path_items.append(oval_id)
+        if len(node) > 3:
+            canvas.create_text(x+4, y-9, text=node, fill="black", font=("arial", 9, 'bold'))
+            canvas.create_text(x+4, y-11, text=node, fill="black", font=("arial", 9, 'bold'))
+            canvas.create_text(x+6, y-9, text=node, fill="black", font=("arial", 9, 'bold'))
+            canvas.create_text(x+6, y-11, text=node, fill="black", font=("arial", 9, 'bold'))
+            canvas.create_text(x+5, y-10, text=node, fill="red", font=("arial", 9, 'bold'))
+
+    print(edges)
+
+
 def on_click(event):
     global current_location
     click_x, click_y = event.x, event.y
@@ -62,6 +95,7 @@ def on_click(event):
                 canvas.itemconfig(oval_id, fill="lightblue")
             canvas.itemconfig(node_ids[name], fill='green')
             break
+
 
 def clear_screen():
     for widget in window.winfo_children():
@@ -78,14 +112,14 @@ def on_click_block(event):
             print(f"Selected node for blocking: {name}")
             break
 
-    # Once two nodes are selected, block the edge
     if len(block_selection) == 2:
         u, v = block_selection
         close_path(u, v)
-        # Reset selection and restore node colors
+
         for n in block_selection:
             canvas.itemconfig(node_ids[n], fill="lightblue")
         block_selection.clear()
+
 
 def close_path(u, v):
     global path_items, blocked_edges, blocked_items
@@ -100,13 +134,11 @@ def close_path(u, v):
 
     blocked_edges.append((u, v))
 
-    # Remove edge from graph
     if u in graph_copy:
         graph_copy[u] = [pair for pair in graph_copy[u] if pair[0] != v]
     if v in graph_copy:
         graph_copy[v] = [pair for pair in graph_copy[v] if pair[0] != u]
 
-    # Draw blocked edge in gray
     x1, y1 = Abington_Locations[u]
     x2, y2 = Abington_Locations[v]
     line_id = canvas.create_line(x1, y1, x2, y2, fill='yellow', width=3)
@@ -116,7 +148,6 @@ def close_path(u, v):
         node_ids[node] = oval_id
     blocked_items.append(line_id)
 
-    # Clear previously drawn path
     for item in path_items:
         canvas.delete(item)
     path_items = []
@@ -125,7 +156,6 @@ def close_path(u, v):
         print("No current location selected.")
         return
 
-    # Recalculate new path
     try:
         route = shortest_path(graph_copy, current_location, "Woodland Building")
         new_path = route[1]
@@ -134,7 +164,6 @@ def close_path(u, v):
         print("No alternative path available.")
         return
 
-    # Draw rerouted path
     for u2, v2 in edges:
         x1, y1 = Abington_Locations[u2]
         x2, y2 = Abington_Locations[v2]
@@ -177,6 +206,9 @@ if __name__ == "__main__":
             canvas.create_text(x+5, y-10, text=node, fill="white", font=("arial", 9, 'bold'))
 
     button = tk.Button(window, text="Run Test", command=lambda: get_path())
+    button.pack()
+
+    button = tk.Button(window, text="Find Closest Building", command=lambda: get_closest_path())
     button.pack()
 
     canvas.bind('<Button-1>', on_click)
