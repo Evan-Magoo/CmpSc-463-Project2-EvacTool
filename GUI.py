@@ -13,6 +13,13 @@ node_ids={}
 current_location = None
 path_items = []
 
+
+'''
+blocked_edges = []      # list of tuples like ("A", "B")
+blocked_items = []      # canvas line IDs for blocked edges
+block_selection = []    # stores the two clicked nodes to block
+
+'''
 def get_path():
     global path_items
     
@@ -59,6 +66,81 @@ def on_click(event):
 def clear_screen():
     for widget in window.winfo_children():
         widget.destroy()
+'''
+def on_click_block(event):
+    """Select nodes by clicking to block the edge between them."""
+    click_x, click_y = event.x, event.y
+    for name, (x, y) in Abington_Locations.items():
+        if (click_x - x)**2 + (click_y - y)**2 <= 20:
+            block_selection.append(name)
+            canvas.itemconfig(node_ids[name], fill="orange")
+            print(f"Selected node for blocking: {name}")
+            break
+
+    # Once two nodes are selected, block the edge
+    if len(block_selection) == 2:
+        u, v = block_selection
+        close_path(u, v)
+        # Reset selection and restore node colors
+        for n in block_selection:
+            canvas.itemconfig(node_ids[n], fill="lightblue")
+        block_selection.clear()
+
+def close_path(u, v):
+    global path_items, blocked_edges, blocked_items
+
+    if (u, v) in blocked_edges or (v, u) in blocked_edges:
+        print(f"Path {u} <-> {v} is already blocked.")
+        return
+
+    blocked_edges.append((u, v))
+
+    # Remove edge from graph
+    if v in Abington_Map.graph[u]:
+        Abington_Map.graph[u].remove(v)
+    if u in Abington_Map.graph[v]:
+        Abington_Map.graph[v].remove(u)
+
+    # Draw blocked edge in gray
+    x1, y1 = Abington_Locations[u]
+    x2, y2 = Abington_Locations[v]
+    line_id = canvas.create_line(x1, y1, x2, y2, fill='gray', width=3)
+    blocked_items.append(line_id)
+
+    # Clear previously drawn path
+    for item in path_items:
+        canvas.delete(item)
+    path_items = []
+
+    if current_location is None:
+        print("No current location selected.")
+        return
+
+    # Recalculate new path
+    try:
+        route = shortest_path(Abington_Map, "Woodland Building", current_location)
+        new_path = route[1]
+        edges = list(zip(new_path[:-1], new_path[1:]))
+    except:
+        print("No alternative path available.")
+        return
+
+    # Draw rerouted path
+    for u2, v2 in edges:
+        x1, y1 = Abington_Locations[u2]
+        x2, y2 = Abington_Locations[v2]
+        line_id = canvas.create_line(x1, y1, x2, y2, fill='red', width=2)
+        path_items.append(line_id)
+
+    for node in new_path:
+        x, y = Abington_Locations[node]
+        r = 4
+        oval_id = canvas.create_oval(x-r, y-r, x+r, y+r, fill="red")
+        path_items.append(oval_id)
+
+    print(f"Rerouted path: {edges}")
+'''
+
 
 
 if __name__ == "__main__":
@@ -91,6 +173,8 @@ if __name__ == "__main__":
     button.pack()
 
     canvas.bind('<Button-1>', on_click)
+    #canvas.bind('<Button-3>', on_click_block)  # Right-click to select nodes to block
+
 
     button = tk.Button(window, text="Test Location", command=lambda: print(current_location))
     button.pack()
