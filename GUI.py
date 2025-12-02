@@ -283,6 +283,76 @@ def close_path(u, v):
 
     update_isolated_nodes()
 
+
+def forFlooding(elevation_data, threshold):
+    """
+    Automatically close all paths where either node is below the flood elevation limit.
+    elevation_data: dict like {"A": 310, "B": 280, ...}
+    threshold: minimum safe elevation in feet or meters
+    """
+    print("\n>>> Running Flooding Auto-Closure...")
+    for u in Abington_Map:
+        for v, _ in Abington_Map[u]:
+
+            # Prevent double-blocking & enforce undirected edges
+            if (u, v) in blocked_edges or (v, u) in blocked_edges:
+                continue
+
+            # If either node is below threshold → block this edge
+            if elevation_data.get(u, 9999) < threshold or elevation_data.get(v, 9999) < threshold:
+                print(f"Flooding risk! Closing {u} <-> {v}")
+                close_path(u, v)
+
+
+def forSnowStorm(incline_data, threshold):
+    """
+    Automatically close all paths where incline between nodes is too steep.
+    incline_data: dict of dicts like:
+        {
+            "A": {"B": 12, "C": 4},
+            "B": {"A": 12}
+        }
+    threshold: maximum safe incline (degrees or %)
+    """
+    print("\n>>> Running SnowStorm Auto-Closure...")
+    for u in Abington_Map:
+        for v, _ in Abington_Map[u]:
+
+            # Prevent double-blocking
+            if (u, v) in blocked_edges or (v, u) in blocked_edges:
+                continue
+
+            incline = 0
+
+            # inclines can be stored A→B or B→A; check both
+            if u in incline_data and v in incline_data[u]:
+                incline = incline_data[u][v]
+            elif v in incline_data and u in incline_data[v]:
+                incline = incline_data[v][u]
+
+            # Block if incline is too steep for icy conditions
+            if incline > threshold:
+                print(f"Snowstorm hazard! Closing steep path {u} <-> {v} (incline={incline})")
+                close_path(u, v)
+'''
+# Example elevation of each node (in feet)
+elevation_data = {
+    "A": 320, "B": 305, "C": 290, "D": 270, "E": 330, "F": 310,
+    "Y": 265, "Z": 260, "AA": 300, "AN": 325,
+    # Add all others...
+}
+
+# Example incline between nodes
+incline_data = {
+    "A": {"B": 8, "C": 12},
+    "B": {"A": 8, "D": 15},
+    "C": {"A": 12, "D": 5},
+    "D": {"B": 15, "C": 5},
+    # Add all others as needed
+}
+
+'''
+
 if __name__ == "__main__":
     global canvas_img_ref
     clear_screen()
@@ -330,3 +400,12 @@ if __name__ == "__main__":
     window.mainloop()
 
     button = tk.Button(window)
+
+    button = tk.Button(window, text="Flooding Scenario",
+                   command=lambda: forFlooding(elevation_data, threshold=300))
+    button.pack()
+
+    button = tk.Button(window, text="Snowstorm Scenario",
+                   command=lambda: forSnowStorm(incline_data, threshold=10))
+    button.pack()
+
