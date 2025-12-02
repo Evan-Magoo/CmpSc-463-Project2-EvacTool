@@ -1,4 +1,5 @@
 import tkinter as tk
+import copy
 from PIL import Image, ImageTk
 from Backend.graph import Abington_Map, Abington_Locations
 from Backend.app import *
@@ -13,13 +14,12 @@ node_ids={}
 current_location = None
 path_items = []
 
-
-'''
 blocked_edges = []      # list of tuples like ("A", "B")
 blocked_items = []      # canvas line IDs for blocked edges
 block_selection = []    # stores the two clicked nodes to block
 
-'''
+graph_copy = copy.deepcopy(Abington_Map)
+
 def get_path():
     global path_items
     
@@ -27,7 +27,7 @@ def get_path():
         canvas.delete(item)
     path_items = []
 
-    route = shortest_path(Abington_Map, "Woodland Building", current_location)
+    route = shortest_path(graph_copy, current_location, "Woodland Building")
     path = route[1]
     edges = list(zip(path[:-1], path[1:]))
 
@@ -66,7 +66,8 @@ def on_click(event):
 def clear_screen():
     for widget in window.winfo_children():
         widget.destroy()
-'''
+
+
 def on_click_block(event):
     """Select nodes by clicking to block the edge between them."""
     click_x, click_y = event.x, event.y
@@ -89,6 +90,10 @@ def on_click_block(event):
 def close_path(u, v):
     global path_items, blocked_edges, blocked_items
 
+    if u not in Abington_Map or v not in Abington_Map:
+        print(f"Invalid nodes: {u}, {v}")
+        return
+
     if (u, v) in blocked_edges or (v, u) in blocked_edges:
         print(f"Path {u} <-> {v} is already blocked.")
         return
@@ -96,15 +101,19 @@ def close_path(u, v):
     blocked_edges.append((u, v))
 
     # Remove edge from graph
-    if v in Abington_Map.graph[u]:
-        Abington_Map.graph[u].remove(v)
-    if u in Abington_Map.graph[v]:
-        Abington_Map.graph[v].remove(u)
+    if u in graph_copy:
+        graph_copy[u] = [pair for pair in graph_copy[u] if pair[0] != v]
+    if v in graph_copy:
+        graph_copy[v] = [pair for pair in graph_copy[v] if pair[0] != u]
 
     # Draw blocked edge in gray
     x1, y1 = Abington_Locations[u]
     x2, y2 = Abington_Locations[v]
-    line_id = canvas.create_line(x1, y1, x2, y2, fill='gray', width=3)
+    line_id = canvas.create_line(x1, y1, x2, y2, fill='yellow', width=3)
+    for node, (x, y) in Abington_Locations.items():
+        r = 4
+        oval_id = canvas.create_oval(x-r, y-r, x+r, y+r, fill="lightblue", activefill='blue')
+        node_ids[node] = oval_id
     blocked_items.append(line_id)
 
     # Clear previously drawn path
@@ -118,7 +127,7 @@ def close_path(u, v):
 
     # Recalculate new path
     try:
-        route = shortest_path(Abington_Map, "Woodland Building", current_location)
+        route = shortest_path(graph_copy, current_location, "Woodland Building")
         new_path = route[1]
         edges = list(zip(new_path[:-1], new_path[1:]))
     except:
@@ -139,8 +148,6 @@ def close_path(u, v):
         path_items.append(oval_id)
 
     print(f"Rerouted path: {edges}")
-'''
-
 
 
 if __name__ == "__main__":
@@ -173,8 +180,9 @@ if __name__ == "__main__":
     button.pack()
 
     canvas.bind('<Button-1>', on_click)
-    #canvas.bind('<Button-3>', on_click_block)  # Right-click to select nodes to block
 
+    close_path('Z', 'AA')
+    close_path('Z', 'Y')
 
     button = tk.Button(window, text="Test Location", command=lambda: print(current_location))
     button.pack()

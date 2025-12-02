@@ -1,3 +1,16 @@
+Buildings = [
+    'Woodland Building',
+    'Lares Building',
+    'Sutherland Building',
+    'Sutherland Auditorium',
+    'Athletic Building',
+    'Rydal Building',
+    'Springhouse',
+    'Lion Shrine',
+    'Tennis Court',
+    'Cloverly Building'
+]
+
 Abington_Map = {
     'Woodland Building': [('A', 214), ('K', 51), ('L', 58), ('AF', 286), ('J', 270), ('AO', 200)],
     'Lares Building': [('H', 143), ('G', 119), ('O', 111), ('Q', 130)],
