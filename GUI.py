@@ -31,6 +31,14 @@ def set_node_color(node, color):
         except Exception:
             pass
 
+def set_node_active_color(node, color):
+    if node in node_ids:
+        canvas.itemconfig(node_ids[node], activefill=color)
+        try:
+            canvas.tag_raise(node_ids[node])   # bring oval above path lines if needed
+        except Exception:
+            pass
+
 def reset_node_colors():
     for n in node_ids.keys():
         # default to lightblue
@@ -42,10 +50,11 @@ def reset_node_colors():
         now_has = len(graph_copy[node]) > 0
         if originally_had and not now_has:
             set_node_color(node, 'yellow')
+            set_node_active_color(node, 'orange')
 
     # preserve selection
     if current_location and current_location in node_ids:
-        set_node_color(current_location, 'green')
+        set_node_color(current_location, 'limegreen')
 
     for node, (x, y) in Abington_Locations.items():
         if node in node_labels and node_labels[node]:
@@ -75,6 +84,34 @@ def clear_path_visuals():
     path_items = []
     reset_node_colors()
 
+def reopen_paths():
+    global graph_copy, blocked_edges, blocked_items
+
+    graph_copy = copy.deepcopy(Abington_Map)
+    for line_group in blocked_items:
+        for line_id in line_group:
+            try:
+                canvas.delete(line_id)
+            except Exception:
+                pass
+    
+    blocked_items.clear()
+
+    blocked_edges.clear()
+
+    clear_path_visuals()
+
+    print("All closed paths reopened.")
+
+def update_isolated_nodes():
+    for node in Abington_Map:
+        originally_had = len(Abington_Map[node]) > 0
+        now_has = len(graph_copy[node]) > 0
+
+        if originally_had and not now_has:
+            set_node_color(node, 'yellow')
+            set_node_active_color(node, 'orange')
+
 def get_path():
     global path_items
     
@@ -98,6 +135,7 @@ def get_path():
     for node in path:
         if node in node_ids:
             set_node_color(node, 'red')
+            set_node_active_color(node, 'red')
 
         if len(node) > 3:
             if node in node_labels and node_labels[node]:
@@ -142,6 +180,7 @@ def get_closest_path():
     for node in path:
         if node in node_ids:
             set_node_color(node, 'red')
+            set_node_active_color(node, 'red')
     
         if len(node) > 3:
             if node in node_labels and node_labels[node]:
@@ -160,77 +199,6 @@ def get_closest_path():
             ]
 
     print(edges)
-
-
-def update_isolated_nodes():
-    for node in Abington_Map:
-        originally_had = len(Abington_Map[node]) > 0
-        now_has = len(graph_copy[node]) > 0
-
-        print(originally_had, "=?=", now_has)
-
-        if originally_had and not now_has:
-            set_node_color(node, 'yellow')
-
-
-def on_click(event):
-    global current_location
-    click_x, click_y = event.x, event.y
-
-    for name, (x, y) in Abington_Locations.items():
-        if (click_x - x)**2 + (click_y - y)**2 <= 20:
-            current_location = name
-            print(f"Clicked on node: {name}")
-
-            for n, oval_id in node_ids.items():
-                current_color = canvas.itemcget(oval_id, "fill")
-
-                originally_had = len(Abington_Map[n]) > 0
-                now_has = len(graph_copy[n]) > 0
-
-                if originally_had and not now_has:
-                    continue
-
-                if current_color == "yellow":
-                    continue
-
-
-            if name in node_ids:
-                canvas.itemconfig(node_ids[name], fill='green')
-            break
-
-
-def clear_screen():
-    for widget in window.winfo_children():
-        widget.destroy()
-
-
-def on_click_block(event):
-    """Select nodes by clicking to block the edge between them."""
-    click_x, click_y = event.x, event.y
-    for name, (x, y) in Abington_Locations.items():
-        if (click_x - x)**2 + (click_y - y)**2 <= 20:
-            block_selection.append(name)
-            canvas.itemconfig(node_ids[name], fill="orange")
-            print(f"Selected node for blocking: {name}")
-            break
-
-    if len(block_selection) == 2:
-        u, v = block_selection
-        close_path(u, v)
-
-        for n in block_selection:
-            originally_had = len(Abington_Map[n]) > 0
-            now_has = len(graph_copy[n]) > 0
-
-            # If still isolated → keep yellow
-            if originally_had and not now_has:
-                continue
-            
-            if n in node_ids:
-                canvas.itemconfig(node_ids[n], fill="lightblue")
-        block_selection.clear()
-
 
 def close_path(u, v):
     global path_items, blocked_edges, blocked_items
@@ -266,32 +234,68 @@ def close_path(u, v):
     clear_path_visuals()
     update_isolated_nodes()
 
-    '''
-    if current_location is None:
-        print("No current location selected.")
-        return
 
-    try:
-        route = shortest_path(graph_copy, current_location, "Woodland Building")
-        new_path = route[1]
-        edges = list(zip(new_path[:-1], new_path[1:]))
-    except:
-        print("No alternative path available.")
-        return
 
-    for u2, v2 in edges:
-        x1, y1 = Abington_Locations[u2]
-        x2, y2 = Abington_Locations[v2]
-        line_id = canvas.create_line(x1, y1, x2, y2, fill='red', width=2)
-        path_items.append(line_id)
 
-    for node in new_path:
-        if node in node_ids:
-            set_node_color(node, 'red')
+def on_click(event):
+    global current_location
+    click_x, click_y = event.x, event.y
 
-    update_isolated_nodes()
-    '''
+    for name, (x, y) in Abington_Locations.items():
+        if (click_x - x)**2 + (click_y - y)**2 <= 20:
+            current_location = name
+            print(f"Clicked on node: {name}")
 
+            # Reset all nodes except isolated (yellow) and blocked (red)
+            for n, oval_id in node_ids.items():
+                originally_had = len(Abington_Map[n]) > 0
+                now_has = len(graph_copy[n]) > 0
+
+                # Isolated node
+                if originally_had and not now_has:
+                    canvas.itemconfig(oval_id, fill='yellow')
+                    canvas.itemconfig(oval_id, activefill='orange')
+                    continue
+
+                # Blocked node
+                if canvas.itemcget(oval_id, "fill") == 'red':
+                    continue
+
+                # Normal reset
+                canvas.itemconfig(oval_id, fill='lightblue')
+
+            # Set clicked node to green
+            canvas.itemconfig(node_ids[name], fill='green')
+            break
+
+
+'''
+def on_click_block(event):
+    """Select nodes by clicking to block the edge between them."""
+    click_x, click_y = event.x, event.y
+    for name, (x, y) in Abington_Locations.items():
+        if (click_x - x)**2 + (click_y - y)**2 <= 20:
+            block_selection.append(name)
+            canvas.itemconfig(node_ids[name], fill="orange")
+            print(f"Selected node for blocking: {name}")
+            break
+
+    if len(block_selection) == 2:
+        u, v = block_selection
+        close_path(u, v)
+
+        for n in block_selection:
+            originally_had = len(Abington_Map[n]) > 0
+            now_has = len(graph_copy[n]) > 0
+
+            # If still isolated → keep yellow
+            if originally_had and not now_has:
+                continue
+            
+            if n in node_ids:
+                canvas.itemconfig(node_ids[n], fill="lightblue")
+        block_selection.clear()
+'''
 
 def forFlooding(threshold):
     """
@@ -345,9 +349,12 @@ def forSnowStorm(threshold):
 
             # Block if incline is too steep for icy conditions
             if incline_angle > threshold:
-                print(f"Snowstorm hazard! Closing steep path {u} <-> {v} (incline={incline})")
+                print(f"Snowstorm hazard! Closing steep path {u} <-> {v} (incline_angle={incline_angle})")
                 close_path(u, v)
 
+def clear_screen():
+    for widget in window.winfo_children():
+        widget.destroy()
 
 if __name__ == "__main__":
     global canvas_img_ref
@@ -376,21 +383,24 @@ if __name__ == "__main__":
                 canvas.create_text(x+4, y-12, text=node, fill="black", font=("arial", 9, 'bold')),
                 canvas.create_text(x+6, y-10, text=node, fill="black", font=("arial", 9, 'bold')),
                 canvas.create_text(x+6, y-12, text=node, fill="black", font=("arial", 9, 'bold')),
-                canvas.create_text(x+5, y-11, text=node, fill="white", font=("arial", 9, 'bold')),
+                canvas.create_text(x+5, y-11, text=node, fill="white", font=("arial", 9, 'bold'))
             ]
             node_labels[node] = label_ids
 
     button = tk.Button(window, text="Find Closest Building", command=lambda: get_closest_path())
-    button.pack()
+    button.pack(side=tk.TOP, padx=10, pady=2)
 
     canvas.bind('<Button-1>', on_click)
 
     button = tk.Button(window, text="Flooding Scenario", command=lambda: forFlooding(threshold=265))
-    button.pack(side=tk.LEFT)
+    button.pack(side=tk.TOP, padx=10, pady=2)
 
 
-    button = tk.Button(window, text="Snowstorm Scenario", command=lambda: forSnowStorm(threshold=8.53))
-    button.pack()
+    button = tk.Button(window, text="Snowstorm Scenario", command=lambda: forSnowStorm(threshold=5))
+    button.pack(side=tk.TOP, padx=10, pady=2)
+
+    button = tk.Button(window, text="Reopen Paths", command=lambda: reopen_paths())
+    button.pack(side=tk.TOP, padx=10, pady=2)
 
     paths = k_shortest_paths(Abington_Map, "Woodland Building", "AN")
     print(paths)
