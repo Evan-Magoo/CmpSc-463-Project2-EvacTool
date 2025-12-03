@@ -1,5 +1,6 @@
 import tkinter as tk
 import copy
+import math
 from PIL import Image, ImageTk
 from Backend.graph import *
 from Backend.app import *
@@ -309,7 +310,7 @@ def forFlooding(threshold):
                 close_path(u, v)
 
 
-def forSnowStorm(incline_data, threshold):
+def forSnowStorm(threshold):
     """
     Automatically close all paths where incline between nodes is too steep.
     incline_data: dict of dicts like:
@@ -321,42 +322,27 @@ def forSnowStorm(incline_data, threshold):
     """
     print("\n>>> Running SnowStorm Auto-Closure...")
     for u in Abington_Map:
-        for v, _ in Abington_Map[u]:
+        for v, dist in Abington_Map[u]:
 
             # Prevent double-blocking
             if (u, v) in blocked_edges or (v, u) in blocked_edges:
                 continue
 
-            incline = 0
+            u_elv = Abington_Elevations[u]
+            v_elv = Abington_Elevations[v]
+
+            elv_dif = abs(u_elv - v_elv)
+
+            incline = elv_dif / dist
 
             # inclines can be stored A→B or B→A; check both
-            if u in incline_data and v in incline_data[u]:
-                incline = incline_data[u][v]
-            elif v in incline_data and u in incline_data[v]:
-                incline = incline_data[v][u]
+            incline_angle = math.degrees(math.atan(incline))
 
             # Block if incline is too steep for icy conditions
-            if incline > threshold:
+            if incline_angle > threshold:
                 print(f"Snowstorm hazard! Closing steep path {u} <-> {v} (incline={incline})")
                 close_path(u, v)
-'''
-# Example elevation of each node (in feet)
-elevation_data = {
-    "A": 320, "B": 305, "C": 290, "D": 270, "E": 330, "F": 310,
-    "Y": 265, "Z": 260, "AA": 300, "AN": 325,
-    # Add all others...
-}
 
-# Example incline between nodes
-incline_data = {
-    "A": {"B": 8, "C": 12},
-    "B": {"A": 8, "D": 15},
-    "C": {"A": 12, "D": 5},
-    "D": {"B": 15, "C": 5},
-    # Add all others as needed
-}
-
-'''
 
 if __name__ == "__main__":
     global canvas_img_ref
@@ -406,7 +392,7 @@ if __name__ == "__main__":
     button = tk.Button(window, text="Flooding Scenario", command=lambda: forFlooding(threshold=265))
     button.pack()
 
-    button = tk.Button(window, text="Snowstorm Scenario", command=lambda: forSnowStorm(incline_data, threshold=10))
+    button = tk.Button(window, text="Snowstorm Scenario", command=lambda: forSnowStorm(threshold=8.53))
     button.pack()
 
     paths = k_shortest_paths(Abington_Map, "Woodland Building", "AN")
