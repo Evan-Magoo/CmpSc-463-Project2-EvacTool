@@ -1,5 +1,5 @@
 import heapq
-from graph import Abington_Map, Buildings
+from .graph import Abington_Map, Buildings
 
 def shortest_path(graph, start, end):
     p_queue = [(0, start, [])]
