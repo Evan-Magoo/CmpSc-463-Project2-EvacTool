@@ -51,6 +51,7 @@ def closest_building_path(graph, start):
     print(results[0])
     return results[0]
 
+# Old Testing Data
 if __name__ == "__main__":
     distance, route = shortest_path(Abington_Map, "Woodland Building", "AN")
     print("Shortest Distance:", distance)
@@ -58,5 +59,4 @@ if __name__ == "__main__":
 
     paths = k_shortest_paths(Abington_Map, "Woodland Building", "AN")
     print(paths)
-    print('yay')
 

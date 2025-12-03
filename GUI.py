@@ -8,6 +8,7 @@ from Backend.app import *
 window = tk.Tk()
 window.title('Abington Evacuation Tool')
 window.geometry('800x800')
+window.configure(bg='#001E44')
 logo = tk.PhotoImage(file="favicon.png")
 window.iconphoto(False, logo)
 
@@ -265,6 +266,7 @@ def close_path(u, v):
     clear_path_visuals()
     update_isolated_nodes()
 
+    '''
     if current_location is None:
         print("No current location selected.")
         return
@@ -288,6 +290,7 @@ def close_path(u, v):
             set_node_color(node, 'red')
 
     update_isolated_nodes()
+    '''
 
 
 def forFlooding(threshold):
@@ -297,6 +300,7 @@ def forFlooding(threshold):
     threshold: minimum safe elevation in feet or meters
     """
     print("\n>>> Running Flooding Auto-Closure...")
+    clear_path_visuals()
     for u in Abington_Map:
         for v, _ in Abington_Map[u]:
 
@@ -321,6 +325,7 @@ def forSnowStorm(threshold):
     threshold: maximum safe incline (degrees or %)
     """
     print("\n>>> Running SnowStorm Auto-Closure...")
+    clear_path_visuals()
     for u in Abington_Map:
         for v, dist in Abington_Map[u]:
 
@@ -375,22 +380,14 @@ if __name__ == "__main__":
             ]
             node_labels[node] = label_ids
 
-    button = tk.Button(window, text="Run Test", command=lambda: get_path())
-    button.pack()
-
     button = tk.Button(window, text="Find Closest Building", command=lambda: get_closest_path())
     button.pack()
 
     canvas.bind('<Button-1>', on_click)
 
-    close_path('Z', 'AA')
-    close_path('Z', 'Y')
-
-    button = tk.Button(window, text="Test Location", command=lambda: print(current_location))
-    button.pack()
-
     button = tk.Button(window, text="Flooding Scenario", command=lambda: forFlooding(threshold=265))
-    button.pack()
+    button.pack(side=tk.LEFT)
+
 
     button = tk.Button(window, text="Snowstorm Scenario", command=lambda: forSnowStorm(threshold=8.53))
     button.pack()
