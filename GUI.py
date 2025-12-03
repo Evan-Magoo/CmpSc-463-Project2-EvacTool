@@ -54,11 +54,11 @@ def reset_node_colors():
                     pass
         if len(node) > 3:
             node_labels[node] = [
-                canvas.create_text(x+4, y-9,  text=node, fill="black", font=("arial", 9, 'bold')),
-                canvas.create_text(x+4, y-11, text=node, fill="black", font=("arial", 9, 'bold')),
-                canvas.create_text(x+6, y-9,  text=node, fill="black", font=("arial", 9, 'bold')),
-                canvas.create_text(x+6, y-11, text=node, fill="black", font=("arial", 9, 'bold')),
-                canvas.create_text(x+5, y-10, text=node, fill="white", font=("arial", 9, 'bold')),
+                canvas.create_text(x+4, y-10,  text=node, fill="black", font=("arial", 9, 'bold')),
+                canvas.create_text(x+4, y-12, text=node, fill="black", font=("arial", 9, 'bold')),
+                canvas.create_text(x+6, y-10,  text=node, fill="black", font=("arial", 9, 'bold')),
+                canvas.create_text(x+6, y-12, text=node, fill="black", font=("arial", 9, 'bold')),
+                canvas.create_text(x+5, y-11, text=node, fill="white", font=("arial", 9, 'bold')),
             ]
 
 def clear_path_visuals():
@@ -110,7 +110,7 @@ def get_path():
                 canvas.create_text(x+4, y-12, text=node, fill="black", font=("arial", 9, 'bold')),
                 canvas.create_text(x+6, y-10, text=node, fill="black", font=("arial", 9, 'bold')),
                 canvas.create_text(x+6, y-12, text=node, fill="black", font=("arial", 9, 'bold')),
-                canvas.create_text(x+5, y-11, text=node, fill="red", font=("arial", 9, 'bold')),
+                canvas.create_text(x+5, y-11, text=node, fill="#FFA0A0", font=("arial", 9, 'bold')),
             ]
 
     print(edges)
@@ -154,7 +154,7 @@ def get_closest_path():
                 canvas.create_text(x+4, y-12, text=node, fill="black", font=("arial", 9, 'bold')),
                 canvas.create_text(x+6, y-10, text=node, fill="black", font=("arial", 9, 'bold')),
                 canvas.create_text(x+6, y-12, text=node, fill="black", font=("arial", 9, 'bold')),
-                canvas.create_text(x+5, y-11, text=node, fill="red", font=("arial", 9, 'bold')),
+                canvas.create_text(x+5, y-11, text=node, fill="#FFA0A0", font=("arial", 9, 'bold')),
             ]
 
     print(edges)
@@ -251,10 +251,15 @@ def close_path(u, v):
     x1, y1 = Abington_Locations[u]
     x2, y2 = Abington_Locations[v]
     line_ids = [
-        canvas.create_line(x1, y1, x2, y2, fill='black', width=3),
-        canvas.create_line(x1, y1, x2, y2, fill='yellow', width=2),
+        canvas.create_line(x1, y1, x2, y2, fill='black', width=5.5),
+        canvas.create_line(x1, y1, x2, y2, fill='yellow', width=4, dash=(15, 5)),
     ]
     blocked_items.append(line_ids)
+
+    if u in node_ids:
+        canvas.tag_raise(node_ids[u])
+    if v in node_ids:
+        canvas.tag_raise(node_ids[v])
 
     clear_path_visuals()
     update_isolated_nodes()
@@ -397,15 +402,12 @@ if __name__ == "__main__":
 
     button = tk.Button(window, text="Test Location", command=lambda: print(current_location))
     button.pack()
+
+    button = tk.Button(window, text="Flooding Scenario", command=lambda: forFlooding(elevation_data, threshold=300))
+    button.pack()
+
+    button = tk.Button(window, text="Snowstorm Scenario", command=lambda: forSnowStorm(incline_data, threshold=10))
+    button.pack()
+
     window.mainloop()
-
-    button = tk.Button(window)
-
-    button = tk.Button(window, text="Flooding Scenario",
-                   command=lambda: forFlooding(elevation_data, threshold=300))
-    button.pack()
-
-    button = tk.Button(window, text="Snowstorm Scenario",
-                   command=lambda: forSnowStorm(incline_data, threshold=10))
-    button.pack()
 
