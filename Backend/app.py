@@ -39,7 +39,7 @@ def k_shortest_paths(graph, start, end, k=3):
         for neighbor, weight in graph[last_node]:
             if neighbor not in path:  # simple path
                 heapq.heappush(queue, (dist + weight, path + [neighbor]))
-
+                
     return shortest_paths
 
 def closest_building_path(graph, start):
@@ -48,7 +48,6 @@ def closest_building_path(graph, start):
         result = shortest_path(graph, start, building)
         results.append(result)
     results.sort(key=lambda x: x[0])
-    print(results[0])
     return results[0]
 
 # Old Testing Data

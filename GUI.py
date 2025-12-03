@@ -126,6 +126,10 @@ def get_path(destination):
     path = route[1]
     edges = list(zip(path[:-1], path[1:]))
 
+    if not route or route[1] is None:
+        print("No route found")
+        return
+
     for u, v in edges:
         x1, y1 = Abington_Locations[u]
         x2, y2 = Abington_Locations[v]
@@ -377,7 +381,7 @@ if __name__ == "__main__":
     canvas_width, canvas_height = campus_img.size
 
     canvas = tk.Canvas(window, width=canvas_width, height=canvas_height)
-    canvas.pack(side=tk.TOP, pady=5)
+    canvas.pack(side=tk.TOP)
 
     tk_img = ImageTk.PhotoImage(campus_img)
     canvas.create_image(0, 0, anchor='nw', image=tk_img)
@@ -417,6 +421,8 @@ if __name__ == "__main__":
         command=lambda: get_closest_path())
     button.grid(row=0, column=0, padx=5)
 
+    controls.grid_columnconfigure(2, minsize=180)
+
     button = tk.Button(
         controls, 
         text="Flooding Scenario", 
@@ -429,8 +435,7 @@ if __name__ == "__main__":
         highlightthickness=0,
         command=lambda: forFlooding(threshold=265)
     )
-    button.grid(row=0, column=1, padx=5)
-
+    button.grid(row=0, column=3, padx=5)
 
     button = tk.Button(
         controls, 
@@ -442,11 +447,11 @@ if __name__ == "__main__":
         activebackground="#96BEE6",
         activeforeground="white",
         highlightthickness=0,
-
-        command=lambda: 
-        forSnowStorm(threshold=5)
+        command=lambda: forSnowStorm(threshold=5)
     )
-    button.grid(row=0, column=2, padx=5)
+    button.grid(row=1, column=3, padx=5)
+
+
 
     button = tk.Button(
         controls, 
@@ -457,9 +462,10 @@ if __name__ == "__main__":
         font=("Arial", 11, "bold"),
         activebackground="#96BEE6",
         activeforeground="white",
+        highlightthickness=0,
         command=lambda: reopen_paths()
     )
-    button.grid(row=0, column=3, padx=5)
+    button.grid(row=0, column=1, padx=5)
 
     button = tk.Button(
         controls, 
@@ -471,6 +477,7 @@ if __name__ == "__main__":
         activebackground="#96BEE6",
         activeforeground="white",
         highlightthickness=0,
+        bd=2,
         command=lambda: get_path(destination)
     )
     button.grid(row=1, column=0, padx=5, pady=10)
@@ -485,8 +492,8 @@ if __name__ == "__main__":
     )
     option_menu.config(
         width=18,
-        bg="#3b5998",
-        fg="white",        
+        bg="white",
+        fg="#1e407c",        
         font=("Arial", 11, "bold"),
         activebackground="#96BEE6",
         activeforeground="white",
@@ -496,14 +503,14 @@ if __name__ == "__main__":
     )
     menu = option_menu["menu"]
     menu.config(
-        bg="#ffffff",
-        fg="#000000",
-        activebackground="#ffcc00",   # hover color
-        activeforeground="#000000",
+        bg="white",
+        fg="black",
+        activebackground="#1e407c",   # hover color
+        activeforeground="white",
         font=("Arial", 11)
     )
 
-    option_menu.grid(row=1, column=1, padx=5, pady=10)
+    option_menu.grid(row=2, column=0, padx=5)
 
     paths = k_shortest_paths(Abington_Map, "Woodland Building", "AN")
     print(paths)
