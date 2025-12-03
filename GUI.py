@@ -1,7 +1,7 @@
 import tkinter as tk
 import copy
 from PIL import Image, ImageTk
-from Backend.graph import Abington_Map, Abington_Locations
+from Backend.graph import *
 from Backend.app import *
 
 window = tk.Tk()
@@ -289,7 +289,7 @@ def close_path(u, v):
     update_isolated_nodes()
 
 
-def forFlooding(elevation_data, threshold):
+def forFlooding(threshold):
     """
     Automatically close all paths where either node is below the flood elevation limit.
     elevation_data: dict like {"A": 310, "B": 280, ...}
@@ -304,7 +304,7 @@ def forFlooding(elevation_data, threshold):
                 continue
 
             # If either node is below threshold → block this edge
-            if elevation_data.get(u, 9999) < threshold or elevation_data.get(v, 9999) < threshold:
+            if Abington_Elevations[u] < threshold or Abington_Elevations[v] < threshold:
                 print(f"Flooding risk! Closing {u} <-> {v}")
                 close_path(u, v)
 
@@ -403,11 +403,15 @@ if __name__ == "__main__":
     button = tk.Button(window, text="Test Location", command=lambda: print(current_location))
     button.pack()
 
-    button = tk.Button(window, text="Flooding Scenario", command=lambda: forFlooding(elevation_data, threshold=300))
+    button = tk.Button(window, text="Flooding Scenario", command=lambda: forFlooding(threshold=265))
     button.pack()
 
     button = tk.Button(window, text="Snowstorm Scenario", command=lambda: forSnowStorm(incline_data, threshold=10))
     button.pack()
 
+    paths = k_shortest_paths(Abington_Map, "Woodland Building", "AN")
+    print(paths)
+
     window.mainloop()
+    
 
