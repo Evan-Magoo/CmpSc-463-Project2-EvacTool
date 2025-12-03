@@ -15,6 +15,7 @@ window.iconphoto(False, logo)
 node_ids={}
 node_labels={}
 current_location=None
+destination=None
 path_items=[]
 
 blocked_edges=[]      # list of tuples like ("A", "B")
@@ -22,6 +23,10 @@ blocked_items=[]      # canvas line IDs for blocked edges
 block_selection=[]    # stores the two clicked nodes to block
 
 graph_copy = copy.deepcopy(Abington_Map)
+
+def set_destinantion(d):
+    global destination
+    destination = d
 
 def set_node_color(node, color):
     if node in node_ids:
@@ -54,7 +59,7 @@ def reset_node_colors():
 
     # preserve selection
     if current_location and current_location in node_ids:
-        set_node_color(current_location, 'limegreen')
+        set_node_color(current_location, 'dodgerblue')
 
     for node, (x, y) in Abington_Locations.items():
         if node in node_labels and node_labels[node]:
@@ -112,12 +117,12 @@ def update_isolated_nodes():
             set_node_color(node, 'yellow')
             set_node_active_color(node, 'orange')
 
-def get_path():
+def get_path(destination):
     global path_items
     
     clear_path_visuals()
 
-    route = shortest_path(graph_copy, current_location, "Woodland Building")
+    route = shortest_path(graph_copy, current_location, destination)
     path = route[1]
     edges = list(zip(path[:-1], path[1:]))
 
@@ -264,8 +269,13 @@ def on_click(event):
                 # Normal reset
                 canvas.itemconfig(oval_id, fill='lightblue')
 
-            # Set clicked node to green
-            canvas.itemconfig(node_ids[name], fill='green')
+            # Set clicked node to green if not isolated
+            originally_had = len(Abington_Map[name]) > 0
+            now_has = len(graph_copy[name]) > 0
+
+            if not (originally_had and not now_has):   # not isolated
+                canvas.itemconfig(node_ids[name], fill='dodgerblue')
+
             break
 
 
@@ -304,6 +314,7 @@ def forFlooding(threshold):
     threshold: minimum safe elevation in feet or meters
     """
     print("\n>>> Running Flooding Auto-Closure...")
+    reopen_paths()
     clear_path_visuals()
     for u in Abington_Map:
         for v, _ in Abington_Map[u]:
@@ -329,6 +340,7 @@ def forSnowStorm(threshold):
     threshold: maximum safe incline (degrees or %)
     """
     print("\n>>> Running SnowStorm Auto-Closure...")
+    reopen_paths()
     clear_path_visuals()
     for u in Abington_Map:
         for v, dist in Abington_Map[u]:
@@ -365,7 +377,7 @@ if __name__ == "__main__":
     canvas_width, canvas_height = campus_img.size
 
     canvas = tk.Canvas(window, width=canvas_width, height=canvas_height)
-    canvas.pack()
+    canvas.pack(side=tk.TOP, pady=5)
 
     tk_img = ImageTk.PhotoImage(campus_img)
     canvas.create_image(0, 0, anchor='nw', image=tk_img)
@@ -387,20 +399,111 @@ if __name__ == "__main__":
             ]
             node_labels[node] = label_ids
 
-    button = tk.Button(window, text="Find Closest Building", command=lambda: get_closest_path())
-    button.pack(side=tk.TOP, padx=10, pady=2)
-
     canvas.bind('<Button-1>', on_click)
 
-    button = tk.Button(window, text="Flooding Scenario", command=lambda: forFlooding(threshold=265))
-    button.pack(side=tk.TOP, padx=10, pady=2)
+    controls = tk.Frame(window, bg="#001E44")
+    controls.pack(pady=10)
+
+    button = tk.Button(
+        controls,
+        text="Find Closest Building", 
+        width=20, 
+        bg="#3b5998",
+        fg="white",        
+        font=("Arial", 11, "bold"),
+        activebackground="#96BEE6",
+        activeforeground="white",
+        highlightthickness=0,
+        command=lambda: get_closest_path())
+    button.grid(row=0, column=0, padx=5)
+
+    button = tk.Button(
+        controls, 
+        text="Flooding Scenario", 
+        width=20, 
+        bg="#3b5998",
+        fg="white",        
+        font=("Arial", 11, "bold"),
+        activebackground="#96BEE6",
+        activeforeground="white",
+        highlightthickness=0,
+        command=lambda: forFlooding(threshold=265)
+    )
+    button.grid(row=0, column=1, padx=5)
 
 
-    button = tk.Button(window, text="Snowstorm Scenario", command=lambda: forSnowStorm(threshold=5))
-    button.pack(side=tk.TOP, padx=10, pady=2)
+    button = tk.Button(
+        controls, 
+        text="Snowstorm Scenario", 
+        width=20, 
+        bg="#3b5998",
+        fg="white",        
+        font=("Arial", 11, "bold"),
+        activebackground="#96BEE6",
+        activeforeground="white",
+        highlightthickness=0,
 
-    button = tk.Button(window, text="Reopen Paths", command=lambda: reopen_paths())
-    button.pack(side=tk.TOP, padx=10, pady=2)
+        command=lambda: 
+        forSnowStorm(threshold=5)
+    )
+    button.grid(row=0, column=2, padx=5)
+
+    button = tk.Button(
+        controls, 
+        text="Reopen Paths", 
+        width=20, 
+        bg="#3b5998",
+        fg="white",        
+        font=("Arial", 11, "bold"),
+        activebackground="#96BEE6",
+        activeforeground="white",
+        command=lambda: reopen_paths()
+    )
+    button.grid(row=0, column=3, padx=5)
+
+    button = tk.Button(
+        controls, 
+        text="Find Path to Building", 
+        width=20, 
+        bg="#3b5998",
+        fg="white",        
+        font=("Arial", 11, "bold"),
+        activebackground="#96BEE6",
+        activeforeground="white",
+        highlightthickness=0,
+        command=lambda: get_path(destination)
+    )
+    button.grid(row=1, column=0, padx=5, pady=10)
+
+    selected_option = tk.StringVar()
+    selected_option.set('Choose Location')
+    option_menu = tk.OptionMenu(
+        controls, 
+        selected_option, 
+        *Buildings, 
+        command=lambda chosen: set_destinantion(chosen)
+    )
+    option_menu.config(
+        width=18,
+        bg="#3b5998",
+        fg="white",        
+        font=("Arial", 11, "bold"),
+        activebackground="#96BEE6",
+        activeforeground="white",
+        highlightthickness=0,
+        relief="ridge",
+        bd=2
+    )
+    menu = option_menu["menu"]
+    menu.config(
+        bg="#ffffff",
+        fg="#000000",
+        activebackground="#ffcc00",   # hover color
+        activeforeground="#000000",
+        font=("Arial", 11)
+    )
+
+    option_menu.grid(row=1, column=1, padx=5, pady=10)
 
     paths = k_shortest_paths(Abington_Map, "Woodland Building", "AN")
     print(paths)
