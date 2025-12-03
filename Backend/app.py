@@ -1,5 +1,5 @@
 import heapq
-from .graph import Abington_Map, Buildings
+from graph import Abington_Map, Buildings
 
 def shortest_path(graph, start, end):
     p_queue = [(0, start, [])]
@@ -23,12 +23,31 @@ def shortest_path(graph, start, end):
  
     return float('inf'), []
 
+def k_shortest_paths(graph, start, end, k=3):
+    # Priority queue: (total_distance, path)
+    queue = [(0, [start])]
+    shortest_paths = []
+
+    while queue and len(shortest_paths) < k:
+        dist, path = heapq.heappop(queue)
+        last_node = path[-1]
+
+        if last_node == end:
+            shortest_paths.append((dist, path))
+            continue
+
+        for neighbor, weight in graph[last_node]:
+            if neighbor not in path:  # simple path
+                heapq.heappush(queue, (dist + weight, path + [neighbor]))
+
+    return shortest_paths
+
 def closest_building_path(graph, start):
     results = []
     for building in Buildings:
         result = shortest_path(graph, start, building)
         results.append(result)
-    results.sort()
+    results.sort(key=lambda x: x[0])
     print(results[0])
     return results[0]
 
@@ -37,4 +56,7 @@ if __name__ == "__main__":
     print("Shortest Distance:", distance)
     print("Route: ", " → ".join(route))
 
+    paths = k_shortest_paths(Abington_Map, "Woodland Building", "AN")
+    print(paths)
+    print('yay')
 
