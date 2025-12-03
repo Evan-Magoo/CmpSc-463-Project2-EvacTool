@@ -37,7 +37,7 @@ def set_location_text(node):
         canvas.itemconfig(node_text_id, text=f"Location: {node}")
 
 def set_path_name_id(id):
-    canvas.itemconfig(path_name_id, text=id+1)
+    canvas.itemconfig(path_name_id, text=f"Path ID: {id+1}")
 
 def set_path_length(length):
     canvas.itemconfig(path_length_id, text=f"Length: {length}ft")
@@ -277,7 +277,7 @@ def close_path(u, v):
     x2, y2 = Abington_Locations[v]
     line_ids = [
         canvas.create_line(x1, y1, x2, y2, fill='black', width=5.5),
-        canvas.create_line(x1, y1, x2, y2, fill='yellow', width=4, dash=(15, 5)),
+        canvas.create_line(x1, y1, x2, y2, fill='yellow', width=4, dash=(4, 4)),
     ]
     blocked_items.append(line_ids)
 
