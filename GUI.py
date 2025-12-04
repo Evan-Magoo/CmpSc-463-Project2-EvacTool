@@ -435,8 +435,8 @@ def forFlooding(threshold):
             # use Abington_Elevations / Woodland_Elevations depending on current locations map
             # try to select the correct elevation dict:
             try:
-                elv_u = Abington_Elevations[u] if u in Abington_Elevations else Woodland_Elevations[u]
-                elv_v = Abington_Elevations[v] if v in Abington_Elevations else Woodland_Elevations[v]
+                elv_u = Abington_Elevations[u]
+                elv_v = Abington_Elevations[v]
             except Exception:
                 # fallback: try single dicts or assume Abington_Elevations exists
                 elv_u = Abington_Elevations.get(u, 0)
@@ -462,8 +462,8 @@ def forSnowStorm(threshold):
 
             # Try to get elevations from either elevation dict
             try:
-                u_elv = Abington_Elevations[u] if u in Abington_Elevations else Woodland_Elevations[u]
-                v_elv = Abington_Elevations[v] if v in Abington_Elevations else Woodland_Elevations[v]
+                u_elv = Abington_Elevations[u]
+                v_elv = Abington_Elevations[v]
             except Exception:
                 u_elv = Abington_Elevations.get(u, 0)
                 v_elv = Abington_Elevations.get(v, 0)
