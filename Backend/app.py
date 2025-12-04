@@ -1,5 +1,5 @@
 import heapq
-from .graph import Abington_Map, Buildings
+from .graph import *
 
 def shortest_path(graph, start, end):
     p_queue = [(0, start, [])]
@@ -45,6 +45,14 @@ def closest_building_path(graph, start):
     results = []
     for building in Buildings:
         result = shortest_path(graph, start, building)
+        results.append(result)
+    results.sort(key=lambda x: x[0])
+    return results[0]
+
+def closest_exit_path(graph, start):
+    results = []
+    for exit in Woodland_Exits:
+        result = shortest_path(graph, start, exit)
         results.append(result)
     results.sort(key=lambda x: x[0])
     return results[0]
