@@ -7,7 +7,7 @@ from Backend.app import *
 
 window = tk.Tk()
 window.title('Abington Evacuation Tool')
-window.geometry('800x800')
+window.geometry('800x820')
 window.configure(bg='#001E44')
 logo = tk.PhotoImage(file="favicon.png")
 window.iconphoto(False, logo)
@@ -20,17 +20,20 @@ path_items = []
 node_text_id = None
 path_length_id = None
 path_name_id = None
+neighbors = []
+selected_neighbor = tk.StringVar()
+selected_neighbor.set('')
+neighbors_menu = None
 
-blocked_edges = []      # list of tuples (u, v)
-blocked_items = []      # list of lists of canvas ids drawn to indicate closure
+blocked_edges = []      
+blocked_items = []      
 block_selection = []
 k_paths = []
-k_path_index = 0        # use an int (you previously had a list here)
+k_path_index = 0        
 
 screen = 0
 locations = Abington_Locations
 map = Abington_Map
-
 graph_copy = copy.deepcopy(map)
 
 def swap_screen():
@@ -70,9 +73,15 @@ def swap_screen():
         map = Woodland_Map
         woodland_building()
 
-def set_destinantion(d):
+# ----------------------------------------------------------------------------------------------------------------
+
+def set_destination(d):
     global destination
     destination = d
+
+def set_current_node(n):
+    global current_location
+    current_location = n
 
 def set_location_text(node):
     if node in node_ids and node_text_id is not None:
@@ -102,6 +111,30 @@ def set_node_active_color(node, color):
             canvas.tag_raise(node_ids[node])   # bring oval above path lines if needed
         except Exception:
             pass
+
+# ----------------------------------------------------------------------------------------------------------------------------------------------------
+
+def update_neighbors_menu():
+    global neighbors_menu, neighbors, selected_neighbor
+    
+    if neighbors_menu is None:
+        return
+
+    menu = neighbors_menu["menu"]
+    menu.delete(0, "end")
+
+    if neighbors:
+        for neighbor in neighbors:
+            menu.add_command(
+                label=neighbor,
+                command=lambda value=neighbor: (
+                    selected_neighbor.set(value),
+                    set_destination(value)
+                )
+            )
+    else:
+        menu.add_command(label="No neighbors", command=lambda: None)
+        selected_neighbor.set('')
 
 def reset_node_colors():
     for n in node_ids.keys():
@@ -381,14 +414,32 @@ def close_path(u, v):
     clear_path_visuals()
     update_isolated_nodes()
 
+def close_selected_path():
+    global current_location, selected_neighbor
+    if current_location is None:
+        print("Select a node first")
+        return
+
+    neighbor = selected_neighbor.get()
+    if not neighbor:
+        print("Select a neighbor to close the path to")
+        return
+
+    close_path(current_location, neighbor)
+    update_neighbors_menu()
+
 def on_click(event):
-    global current_location
+    global current_location, neighbors
     click_x, click_y = event.x, event.y
 
     for name, (x, y) in locations.items():
         if (click_x - x)**2 + (click_y - y)**2 <= 20:
             current_location = name
             print(f"Clicked on node: {name}")
+
+            neighbors = [neighbor for neighbor, dist in graph_copy[current_location]]
+            selected_neighbor.set('')  
+            update_neighbors_menu()
 
             # Reset all nodes except isolated (yellow) and blocked (red)
             for n, oval_id in node_ids.items():
@@ -492,9 +543,13 @@ def clear_screen():
     for widget in window.winfo_children():
         widget.destroy()
 
-# ---------- main_screen and woodland_building remain mostly the same but now use locations/global map ----------
+# ---------- main_screen and woodland_building remain mostly the same but now use locations/global map --------------------------------------------------
+
 def main_screen():
-    global canvas, canvas_img_ref, node_labels, node_ids, node_text_id, path_name_id, path_length_id, k_path_index, locations, map
+    global canvas, canvas_img_ref
+    global node_labels, node_ids, node_text_id
+    global path_name_id, path_length_id, k_path_index
+    global locations, map, neighbors_menu, selected_neighbor
 
     # ensure we are using Abington assets for this screen
     locations = Abington_Locations
@@ -610,7 +665,7 @@ def main_screen():
         controls,
         selected_option,
         *Buildings,
-        command=lambda chosen: set_destinantion(chosen)
+        command=lambda chosen: set_destination(chosen)
     )
     option_menu.config(
         width=18,
@@ -684,10 +739,56 @@ def main_screen():
         activeforeground="white",
         command=lambda: swap_screen()
     )
-    button.grid(row=2, column=3, padx=5)
+    button.grid(row=3, column=3, padx=5)
+
+
+    selected_neighbor.set('')
+    neighbors_menu = tk.OptionMenu(
+        controls,
+        selected_neighbor,
+        "No Neighbors",
+    )
+    neighbors_menu.config(
+        width=18,
+        bg="white",
+        fg="#1e407c",
+        font=("Arial", 11, "bold"),
+        activebackground="#96BEE6",
+        activeforeground="white",
+        highlightthickness=0,
+        relief="ridge",
+        bd=2
+    )
+    menu = neighbors_menu["menu"]
+    menu.config(
+        bg="white",
+        fg="black",
+        activebackground="#1e407c",   # hover color
+        activeforeground="white",
+        font=("Arial", 11)
+    )
+    neighbors_menu.grid(row=3, column=0, padx=5, pady=10)
+
+    button = tk.Button(
+        controls,
+        text="Close Path",
+        width=20,
+        bg="#3b5998",
+        fg="white",
+        font=("Arial", 11, "bold"),
+        activebackground="#96BEE6",
+        activeforeground="white",
+        command=close_selected_path
+    )
+    button.grid(row=3, column=1, padx=5)
+
+# ----------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 def woodland_building():
-    global canvas, canvas_img_ref, node_labels, node_ids, node_text_id, path_name_id, path_length_id, k_path_index, locations, map
+    global canvas, canvas_img_ref
+    global node_labels, node_ids, node_text_id
+    global path_name_id, path_length_id, k_path_index
+    global locations, map, neighbors_menu, selected_neighbor
 
     # ensure Woodland assets used
     locations = Woodland_Locations
@@ -789,7 +890,7 @@ def woodland_building():
         controls,
         selected_option,
         *Woodland_Exits,
-        command=lambda chosen: set_destinantion(chosen)
+        command=lambda chosen: set_destination(chosen)
     )
     option_menu.config(
         width=18,
@@ -863,8 +964,49 @@ def woodland_building():
         activeforeground="white",
         command=lambda: swap_screen()
     )
-    button.grid(row=2, column=3, padx=5)
+    button.grid(row=3, column=3, padx=5)
 
+    selected_neighbor.set('')
+    neighbors_menu = tk.OptionMenu(
+        controls,
+        selected_neighbor,
+        "No Neighbors",
+    )
+    neighbors_menu.config(
+        width=18,
+        bg="white",
+        fg="#1e407c",
+        font=("Arial", 11, "bold"),
+        activebackground="#96BEE6",
+        activeforeground="white",
+        highlightthickness=0,
+        relief="ridge",
+        bd=2
+    )
+    menu = neighbors_menu["menu"]
+    menu.config(
+        bg="white",
+        fg="black",
+        activebackground="#1e407c",   # hover color
+        activeforeground="white",
+        font=("Arial", 11)
+    )
+    neighbors_menu.grid(row=3, column=0, padx=5, pady=10)
+
+    button = tk.Button(
+        controls,
+        text="Close Path",
+        width=20,
+        bg="#3b5998",
+        fg="white",
+        font=("Arial", 11, "bold"),
+        activebackground="#96BEE6",
+        activeforeground="white",
+        command=close_selected_path
+    )
+    button.grid(row=3, column=1, padx=5)
+
+# ----------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 if __name__ == "__main__":
     global canvas_img_ref
