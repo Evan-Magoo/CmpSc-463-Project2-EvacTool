@@ -1,6 +1,20 @@
 import heapq
 from .graph import *
+#============================================
+# Edge Blocking System
+blocked_edges = set()
 
+def block_edge(a, b):
+    blocked_edges.add((a, b))
+    blocked_edges.add((b, a))
+
+def unblock_edge(a, b):
+    blocked_edges.discard((a, b))
+    blocked_edges.discard((b, a))
+
+def is_blocked(a, b):
+    return (a, b) in blocked_edges
+#===========================================
 def shortest_path(graph, start, end):
     p_queue = [(0, start, [])]
     visited = set()
