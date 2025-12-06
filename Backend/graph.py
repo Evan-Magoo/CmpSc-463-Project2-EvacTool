@@ -1,3 +1,4 @@
+# List of buildings on Abington Campus
 Buildings = [
     'Woodland Building',
     'Lares Building',
@@ -9,6 +10,7 @@ Buildings = [
     'Cloverly Building'
 ]
 
+# Graph representation of Abington campus: nodes and weigthed edges (distance in feet)
 Abington_Map = {
     'Woodland Building': [('A', 71), ('K', 51), ('L', 58), ('AF', 128), ('AO', 154)],
     'Lares Building': [('H', 143), ('G', 119), ('O', 111), ('Q', 130)],
@@ -63,6 +65,7 @@ Abington_Map = {
     'AO': [('J', 90), ('K', 277), ('Woodland Building', 154)]
 }
 
+# Coordinates for Abington campus nodes for canvas display (x, y in pixels)
 Abington_Locations = {
     'Woodland Building': (386, 122),
     'Lares Building': (560, 115),
@@ -117,6 +120,7 @@ Abington_Locations = {
     'AO': (397, 57)
 }
 
+# Elevation data for Abington campus nodes (in feet)
 Abington_Elevations = {
     'Woodland Building': 319.3,
     'Lares Building': 299.3,
@@ -171,6 +175,7 @@ Abington_Elevations = {
     'AO': 321.9
 }
 
+# Graph representation of Woodland building: nodes and weighted edges (distance in feet)
 Woodland_Map = {
     'Exit 1': [('A', 41)],
     'Exit 2': [('B', 35)],
@@ -193,6 +198,7 @@ Woodland_Map = {
     'J': [('I', 62), ('E', 28), ('Exit 4', 10)]
 }
 
+# Coordinates for Woodland building nodes for canvas display (x, y in pixels)
 Woodland_Locations = {
     'Exit 1': (122, 542),
     'Exit 2': (214, 458),
@@ -215,6 +221,7 @@ Woodland_Locations = {
     'J': (415, 300)
 }
 
+# List of exit nodes in the Woodland building map
 Woodland_Exits = [
     'Exit 1',
     'Exit 2',

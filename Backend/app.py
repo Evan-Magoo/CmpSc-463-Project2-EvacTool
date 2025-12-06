@@ -2,6 +2,9 @@ import heapq
 from .graph import *
 
 def shortest_path(graph, start, end):
+    """
+    Return shortest path and distance using Dijkstra's algorithm.
+    """
     p_queue = [(0, start, [])]
     visited = set()
 
@@ -24,6 +27,9 @@ def shortest_path(graph, start, end):
     return float('inf'), []
 
 def k_shortest_paths(graph, start, end, k=5):
+    """
+    Return up to k shortest paths from start to end in the graph.
+    """
     queue = [(0, [start])]
     shortest_paths = []
 
@@ -42,6 +48,9 @@ def k_shortest_paths(graph, start, end, k=5):
     return shortest_paths
 
 def closest_building_path(graph, start):
+    """
+    Find the shortest path from start to the nearest building.
+    """
     results = []
     for building in Buildings:
         result = shortest_path(graph, start, building)
@@ -50,6 +59,9 @@ def closest_building_path(graph, start):
     return results[0]
 
 def closest_exit_path(graph, start):
+    """
+    Find the shortest path from start to the nearest Woodland exit.
+    """
     results = []
     for exit in Woodland_Exits:
         result = shortest_path(graph, start, exit)

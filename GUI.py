@@ -5,6 +5,8 @@ from PIL import Image, ImageTk
 from Backend.graph import *
 from Backend.app import *
 
+# ----------------------------- Window Setup -----------------------------
+
 window = tk.Tk()
 window.title('Abington Evacuation Tool')
 window.geometry('800x820')
@@ -12,6 +14,9 @@ window.configure(bg='#001E44')
 logo = tk.PhotoImage(file="favicon.png")
 window.iconphoto(False, logo)
 
+# ------------------------- Global Variables -----------------------------
+
+# Tikinter Variables
 node_ids = {}
 node_labels = {}
 current_location = None
@@ -20,23 +25,33 @@ path_items = []
 node_text_id = None
 path_length_id = None
 path_name_id = None
+
+# Neighbors Menu
 neighbors = []
 selected_neighbor = tk.StringVar()
 selected_neighbor.set('')
 neighbors_menu = None
 
+
+# Path blocking and K-shortest paths
 blocked_edges = []      
 blocked_items = []      
 block_selection = []
 k_paths = []
 k_path_index = 0        
 
+# Screen toggle and map data
 screen = 0
 locations = Abington_Locations
 map = Abington_Map
 graph_copy = copy.deepcopy(map)
 
+# --------------------------- Screen Switching ---------------------------
+
 def swap_screen():
+    """
+    Switch between Abington and Woodland maps, resetting all nodes, paths, and edges.
+    """
     global screen, locations, map
     global current_location, destination, graph_copy
     global k_paths, k_path_index
@@ -73,30 +88,47 @@ def swap_screen():
         map = Woodland_Map
         woodland_building()
 
-# ----------------------------------------------------------------------------------------------------------------
+# ------------------------- Node & Path Utilities -------------------------
 
 def set_destination(d):
+    """
+    Set the global destination node to the given value.
+    """
     global destination
     destination = d
 
 def set_current_node(n):
+    """
+    Set the global current location to the given node.
+    """
     global current_location
     current_location = n
 
 def set_location_text(node):
+    """
+    Update the canvas text to show the currently selected node.
+    """
     if node in node_ids and node_text_id is not None:
         canvas.itemconfig(node_text_id, text=f"Location: {node}")
 
 def set_path_name_id(idx):
-    # idx is the path index (int)
+    """
+    Update the canvas text to display the current path index.
+    """
     if path_name_id is not None:
         canvas.itemconfig(path_name_id, text=f"Path ID: {idx+1}")
 
 def set_path_length(length):
+    """
+    Update the canvas text to show the length of the current path.
+    """
     if path_length_id is not None:
         canvas.itemconfig(path_length_id, text=f"Length: {length}ft")
 
 def set_node_color(node, color):
+    """
+    Set the fill color of a node on the canvas and bring it above path lines.
+    """
     if node in node_ids:
         canvas.itemconfig(node_ids[node], fill=color)
         try:
@@ -105,6 +137,9 @@ def set_node_color(node, color):
             pass
 
 def set_node_active_color(node, color):
+    """
+    Set the active (hover) color of a node on the canvas and bring it above path lines.
+    """
     if node in node_ids:
         canvas.itemconfig(node_ids[node], activefill=color)
         try:
@@ -112,9 +147,12 @@ def set_node_active_color(node, color):
         except Exception:
             pass
 
-# ----------------------------------------------------------------------------------------------------------------------------------------------------
+# ----------------------- Neighbor Menu Management -----------------------
 
 def update_neighbors_menu():
+    """
+    Update the neighbors dropdown menu based on the currently selected node.
+    """
     global neighbors_menu, neighbors, selected_neighbor
     
     if neighbors_menu is None:
@@ -136,7 +174,13 @@ def update_neighbors_menu():
         menu.add_command(label="No neighbors", command=lambda: None)
         selected_neighbor.set('')
 
+# ------------------------- Node & Path Reset ----------------------------
+
 def reset_node_colors():
+    """
+    Reset node colors to default and update labels.
+    Isolated nodes are yellow, selected node is blue.
+    """
     for n in node_ids.keys():
         # default to lightblue
         canvas.itemconfig(node_ids[n], fill='lightblue')
@@ -170,7 +214,9 @@ def reset_node_colors():
             ]
 
 def clear_path_visuals():
-    """Remove old path lines (not node ovals) and reset node colors to base state."""
+    """
+    Remove old path lines (not node ovals) and reset node colors to base state.
+    """
     global path_items
     for item in path_items:
         for i in item:
@@ -182,6 +228,10 @@ def clear_path_visuals():
     reset_node_colors()
 
 def reopen_paths():
+    """
+    Reopen all blocked paths and reset canvas.
+    Restores graph_copy to original map.
+    """
     global graph_copy, blocked_edges, blocked_items
 
     graph_copy = copy.deepcopy(map)
@@ -200,6 +250,10 @@ def reopen_paths():
     print("All closed paths reopened.")
 
 def update_isolated_nodes():
+    """
+    Color nodes yellow if they have no remaining edges in graph_copy.
+    Used to indicate isolation.
+    """
     for node in map:
         originally_had = len(map[node]) > 0
         now_has = len(graph_copy[node]) > 0
@@ -208,7 +262,12 @@ def update_isolated_nodes():
             set_node_color(node, 'yellow')
             set_node_active_color(node, 'yellow')
 
+# -------------------------- Pathfinding Functions -----------------------
+
 def get_closest_exit():
+    """
+    Find and display shortest path to nearest exit from current location.
+    """
     global path_items
 
     clear_path_visuals()
@@ -221,6 +280,7 @@ def get_closest_exit():
     path = route[1]
     edges = list(zip(path[:-1], path[1:]))
 
+    # Draw path lines
     for u, v in edges:
         # use current locations dict (works for Woodland or Abington depending on screen)
         x1, y1 = locations[u]
@@ -231,6 +291,7 @@ def get_closest_exit():
         ]
         path_items.append(line_ids)
 
+    # Highlight nodes along path
     for node in path:
         if node in node_ids:
             set_node_color(node, 'red')
@@ -255,6 +316,9 @@ def get_closest_exit():
     print(edges)
 
 def get_closest_path():
+    """
+    Find and display shortest path to nearest building from current location.
+    """
     global path_items
 
     clear_path_visuals()
@@ -300,6 +364,9 @@ def get_closest_path():
     print(edges)
 
 def get_k_paths(k=10):
+    """
+    Find the k shortest paths to the selected destination from current location.
+    """
     global k_paths
     if not current_location or not destination:
         print("Select a start and destination first")
@@ -328,6 +395,9 @@ def get_k_paths(k=10):
 
 
 def display_path(path_index=0):
+    """
+    Display a selected unblocked path on the canvas, highlighting nodes and edges.
+    """
     global path_items, k_paths, k_path_index
 
     clear_path_visuals()
@@ -378,6 +448,10 @@ def display_path(path_index=0):
             ]
 
 def close_path(u, v):
+    """
+    Block a path between two nodes by removing it from the graph, marking it as blocked,
+    and displaying a visual indicator on the canvas.
+    """
     global path_items, blocked_edges, blocked_items, graph_copy
 
     # use current map (works for Abington or Woodland)
@@ -415,6 +489,9 @@ def close_path(u, v):
     update_isolated_nodes()
 
 def close_selected_path():
+    """
+    Close the path from the current node to the selected neighbor.
+    """
     global current_location, selected_neighbor
     if current_location is None:
         print("Select a node first")
@@ -429,6 +506,10 @@ def close_selected_path():
     update_neighbors_menu()
 
 def on_click(event):
+    """
+    Handle mouse click on the canvas: select a node, update neighbors, 
+    reset node colors, and highlight the clicked node.
+    """
     global current_location, neighbors
     click_x, click_y = event.x, event.y
 
@@ -468,6 +549,8 @@ def on_click(event):
                 set_location_text(name)
 
             break
+
+# ------------------------- Weather/Scenario Functions -------------------
 
 def forFlooding(threshold):
     """
@@ -531,6 +614,9 @@ def forSnowStorm(threshold):
                 close_path(u, v)
 
 def forFireScenario():
+    """
+    Simulate a fire by closing specific paths in Woodland building.
+    """
     print("\n>>> Running Fire Scenario...")
     reopen_paths()
     clear_path_visuals()
@@ -539,35 +625,39 @@ def forFireScenario():
     close_path('E', 'J')
     close_path('E', 'Exit 9')
 
+# ---------------------------- Canvas & Widgets --------------------------
+
 def clear_screen():
     for widget in window.winfo_children():
         widget.destroy()
 
-# ---------- main_screen and woodland_building remain mostly the same but now use locations/global map --------------------------------------------------
+# --------------------------- Main Screen Functions ----------------------
 
 def main_screen():
+    """
+    Display Abington campus map with nodes and controls for evacuation tool.
+    """
     global canvas, canvas_img_ref
     global node_labels, node_ids, node_text_id
     global path_name_id, path_length_id, k_path_index
     global locations, map, neighbors_menu, selected_neighbor
 
-    # ensure we are using Abington assets for this screen
+    # Load campus image
     locations = Abington_Locations
     map = Abington_Map
-
     campus_img = Image.open("Abington Map.png")
     campus_img = campus_img.resize((800, 640))
     canvas_width, canvas_height = campus_img.size
 
+    # Create canvas and draw image
     canvas = tk.Canvas(window, width=canvas_width, height=canvas_height)
     canvas.pack(side=tk.TOP)
-
     tk_img = ImageTk.PhotoImage(campus_img)
     canvas.create_image(0, 0, anchor='nw', image=tk_img)
     canvas_img_ref = tk_img
 
+    # Create node ovals and labels
     node_labels = {}
-
     for node, (x, y) in locations.items():
         r = 4
         oval_id = canvas.create_oval(x-r, y-r, x+r, y+r, fill="lightblue", activefill='blue')
@@ -582,11 +672,14 @@ def main_screen():
             ]
             node_labels[node] = label_ids
 
+    # Bind click events
     canvas.bind('<Button-1>', on_click)
 
+    # ---------------- Controls Panel ----------------
     controls = tk.Frame(window, bg="#001E44")
     controls.pack(pady=10)
 
+    # ---------------- Buttons and Menus ----------------
     button = tk.Button(
         controls,
         text="Find Closest Building",
@@ -782,31 +875,34 @@ def main_screen():
     )
     button.grid(row=3, column=1, padx=5)
 
-# ----------------------------------------------------------------------------------------------------------------------------------------------------------------
+# --------------------------- Woodland Building --------------------------
 
 def woodland_building():
+    """
+    Display Woodland Building map with nodes and controls.
+    Similar structure to main_screen but uses Woodland data and Fire scenario.
+    """
     global canvas, canvas_img_ref
     global node_labels, node_ids, node_text_id
     global path_name_id, path_length_id, k_path_index
     global locations, map, neighbors_menu, selected_neighbor
 
-    # ensure Woodland assets used
+    # Load Woodland map image and setup canvas
     locations = Woodland_Locations
     map = Woodland_Map
-
     campus_img = Image.open("Woodland Building.png")
     campus_img = campus_img.resize((800, 640))
     canvas_width, canvas_height = campus_img.size
 
+    # Create canvas and draw image
     canvas = tk.Canvas(window, width=canvas_width, height=canvas_height)
     canvas.pack(side=tk.TOP)
-
     tk_img = ImageTk.PhotoImage(campus_img)
     canvas.create_image(0, 0, anchor='nw', image=tk_img)
     canvas_img_ref = tk_img
 
+    # Create node ovals, labels, and bind click events
     node_labels = {}
-
     for node, (x, y) in locations.items():
         r = 4
         oval_id = canvas.create_oval(x-r, y-r, x+r, y+r, fill="lightblue", activefill='blue')
@@ -821,11 +917,14 @@ def woodland_building():
             ]
             node_labels[node] = label_ids
 
+    # Bind click events
     canvas.bind('<Button-1>', on_click)
 
+    # ---------------- Controls Panel ----------------
     controls = tk.Frame(window, bg="#001E44")
     controls.pack(pady=10)
 
+    # ---------------- Buttons and Menus ----------------
     button = tk.Button(
         controls,
         text="Find Closest Exit",
@@ -1006,7 +1105,7 @@ def woodland_building():
     )
     button.grid(row=3, column=1, padx=5)
 
-# ----------------------------------------------------------------------------------------------------------------------------------------------------------------
+# ----------------------------- Main Loop -------------------------------
 
 if __name__ == "__main__":
     global canvas_img_ref
