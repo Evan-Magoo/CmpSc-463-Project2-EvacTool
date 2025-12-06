@@ -299,13 +299,13 @@ def get_closest_path():
 
     print(edges)
 
-def get_k_paths():
+def get_k_paths(k=10):
     global k_paths
     if not current_location or not destination:
         print("Select a start and destination first")
         return
 
-    all_paths = k_shortest_paths(graph_copy, current_location, destination, k=10)
+    all_paths = k_shortest_paths(graph_copy, current_location, destination, k=k)
     if not all_paths:
         print("No paths found")
         return
@@ -325,6 +325,7 @@ def get_k_paths():
     print("Available unblocked paths:")
     for i, (dist, path) in enumerate(k_paths):
         print(f"{i+1}: {dist} → {' → '.join(path)}")
+
 
 def display_path(path_index=0):
     global path_items, k_paths, k_path_index
@@ -355,7 +356,6 @@ def display_path(path_index=0):
             canvas.create_line(x1, y1, x2, y2, fill='red', width=2, arrow=tk.LAST, arrowshape=(10, 12, 5)),
         ]
         path_items.append(line_ids)
-
     for node in path:
         if node in node_ids:
             set_node_color(node, 'red')
